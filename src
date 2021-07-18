@@ -1,0 +1,93 @@
+
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <style>
+            .invalid-word{
+                background-color: red;
+            }
+        </style>
+    </head>
+    <body>
+        <input type="file" id="inputfile" onchange="ReadFile();"/>
+        <div id="filecontent">
+
+        </div>
+        <div id="custommenu" style="background-color: rosybrown;width: 150px;display: none;border: 1px solid black;">
+
+        </div>
+    </body>
+    <script>
+        function ReadFile(){
+            let file=inputfile.files[0];
+            let reader=new FileReader();
+            reader.readAsText(file);
+            reader.onload=()=>{
+                filecontent.innerHTML=reader.result;
+                let text=reader.result;
+                let formatter=text.replace(' ','+');
+                let api="https://api.textgears.com/spelling";
+                let apikey="1gVny1rfj02gy7kY";
+                let lang="en-GB";
+                let apiurl=api+"?text="+formatter+"&language="+lang+"&key="+apikey;
+                $.ajax(
+                    {
+                        url:apiurl,
+                        method:"GET",
+                        success:function(result,status){
+                            if(status){
+                                var invalidwords=result.response.errors;
+                                for(let invalidword of invalidwords){
+                                    text=text.replace(invalidword.bad,`<span class="invalid-word" >${invalidword.bad}</span>`)
+                                }
+                                filecontent.innerHTML=text;
+                            let invalidwordspans=document.querySelectorAll(".invalid-word");
+                            for(i=0;i<invalidwordspans.length;i++){
+                                $(invalidwordspans[i]).contextmenu((event)=>{
+                                    event.preventDefault();
+                                    $("custommenu > ul").empty();
+                                    console.log(invalidwords[0])
+                                    for(let j=0;j<invalidwords[i].better.length;j++){
+                                        $("#custommenu > ul").append(`<li wordtoreplace=${invalidwords[i].bad} class="suggestion-list" > ${invalidwords[i].better[j]}</li>`)
+                                    }
+                                    $(".suggestion-list").mouseover(
+                                        (event)=>{
+                                        event.target.style.color="yellow";
+                                        }
+                                    )
+                                    $(".suggestion-list").mouseover(
+                                        (event)=>{
+                                        event.target.style.color="yellow";
+                                        }
+                                    )
+                                    $(".suggestion-list").mouseover(
+                                        (event)=>{
+                                       let wrongwords=document.getElementsByClassName("invalid-word");
+                                       for(z=0;z<wrongwords.length;z++){
+                                           if(wrongwords[z].innerHTML==$(event.target).attr("wordstoreplace")){
+                                               wrongwords[z].innerHTML=event.target.innerHTML;
+                                               wrongwords[z].classList.remove("invalid-word");
+                                               $("#custommenu").css("display","none");
+                                               break;
+                                           }
+                                       }
+                                        }
+                                    )
+                                    $("#custommenu").css("display","block");
+                                    $("#custommenu").css({
+                                        position:"relative",
+                                        top:event.clientY,
+                                        top:event.clienX
+                                    });
+                                })
+                              }  }
+                        },
+                        error:function(){
+                            console.log("there is a  issue");
+                        }
+                    }
+                );
+            }
+        }
+    </script>
+</html>
